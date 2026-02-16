@@ -1,0 +1,22 @@
+[project]
+name = "email-spam-detector"
+version = "0.1.0"
+description = "A heuristic-based email spam detector."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "faker>=40.4.0",
+    "pytest>=9.0.2",
+    "tabulate>=0.9.0",  # Used in nostalgia nonsense_detector
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/email_spam_detector"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
