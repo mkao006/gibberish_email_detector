@@ -278,7 +278,7 @@ def main():
     ensemble = EnsembleDetector([gibberish, keyword, heuristic, tokeniser])
     
     test_emails = [
-        "michael.kao@airwallex.com",
+        "jane.doe@example.com",
         "fdasfjaklsd@gmail.com",
         "bob@gmail.com",
         "win.free.money@spam.com",

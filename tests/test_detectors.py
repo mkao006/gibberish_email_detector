@@ -4,7 +4,7 @@ def test_gibberish_detector():
     detector = GibberishDetector()
     
     # Legit emails
-    assert detector.is_spam("michael.kao@airwallex.com") == False
+    assert detector.is_spam("jane.doe@example.com") == False
     assert detector.is_spam("john.doe@gmail.com") == False
     assert detector.is_spam("support@github.com") == False
     assert detector.is_spam("bob@example.com") == False # Short
@@ -31,7 +31,7 @@ def test_keyword_detector():
     assert detector.is_spam("urgent.offer@yahoo.com") == True
     
     # No keywords
-    assert detector.is_spam("michael.kao@gmail.com") == False
+    assert detector.is_spam("jane.doe@gmail.com") == False
     assert detector.is_spam("info@company.com") == False
 
 def test_heuristic_detector():
@@ -52,7 +52,7 @@ def test_heuristic_detector():
     assert detector.is_spam("02986u2qrxzw@gmail.com") == True
 
     # Legit
-    assert detector.is_spam("michael.kao@gmail.com") == False
+    assert detector.is_spam("jane.doe@gmail.com") == False
     assert detector.is_spam("support@github.com") == False
 
 def test_ensemble_detector():
@@ -71,13 +71,13 @@ def test_ensemble_detector():
     assert ensemble.is_spam("qazwsxedcrfvtgb@gmail.com") == True
     
     # Legit
-    assert ensemble.is_spam("michael.kao@gmail.com") == False
+    assert ensemble.is_spam("jane.doe@gmail.com") == False
 
 def test_tokeniser_detector():
     detector = TokeniserDetector()
 
     # Legit
-    assert detector.is_spam("michael.kao@airwallex.com") == False
+    assert detector.is_spam("jane.doe@example.com") == False
     assert detector.is_spam("john.doe@gmail.com") == False
     assert detector.is_spam("jose.garcia1987@gmail.com") == False
 

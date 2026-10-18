@@ -4,7 +4,7 @@ Flags spam email addresses by looking at the local part (before the `@`).
 It combines a few lightweight detectors in an ensemble, with no trained model.
 
 ```
-michael.kao@airwallex.com   -> legitimate
+jane.doe@example.com        -> legitimate
 fdasfjaklsd@gmail.com       -> gibberish spam
 win.free.money@spam.com     -> keyword spam
 ```
