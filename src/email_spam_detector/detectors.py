@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 import math
+import re
+import unicodedata
 from collections import Counter
-from typing import List, Optional, Set, Tuple
+from enum import Enum
+from typing import Callable, List, Optional, Sequence, Set, Tuple
 from .nostril_impl.nonsense_detector import nonsense_score
 
 class BaseDetector(ABC):
@@ -213,6 +216,51 @@ class HeuristicDetector(BaseDetector):
         
         return total_dist / count if count > 0 else 10.0
 
+class GibberishClassification(Enum):
+    GIBBERISH = "gibberish"
+    NOT_GIBBERISH = "not_gibberish"
+    NON_LATIN = "non_latin"
+
+class TokeniserDetector(BaseDetector):
+    """
+    Detects gibberish by how badly a subword tokeniser fragments the local part.
+    Real names compress into few tokens; random strings split into many.
+    Score = tokens per letter, over the letter-only words of the local part.
+
+    Pass any tokeniser as a function returning tokens, e.g.
+    sentencepiece.SentencePieceProcessor(model_file=...).encode or
+    transformers.AutoTokenizer.from_pretrained(...).tokenize.
+    Retune the threshold when switching tokenisers.
+    """
+
+    # Tuned on generated data for tiktoken cl100k_base
+    DEFAULT_THRESHOLD = 0.47
+
+    def __init__(self, tokenise: Optional[Callable[[str], Sequence]] = None, threshold: float = DEFAULT_THRESHOLD):
+        if tokenise is None:
+            import tiktoken
+            tokenise = tiktoken.get_encoding("cl100k_base").encode
+        self.tokenise = tokenise
+        self.threshold = threshold
+
+    def is_spam(self, email: str) -> bool:
+        return self.classify(email) is GibberishClassification.GIBBERISH
+
+    def classify(self, email: str) -> GibberishClassification:
+        local_part = self._get_local_part(email)
+        letters = [c for c in local_part or "" if c.isalpha()]
+        if not letters or not all("LATIN" in unicodedata.name(c, "") for c in letters):
+            return GibberishClassification.NON_LATIN
+
+        score = self.score(local_part)
+        if score > self.threshold:
+            return GibberishClassification.GIBBERISH
+        return GibberishClassification.NOT_GIBBERISH
+
+    def score(self, local_part: str) -> float:
+        words = re.findall(r"[^\W\d_]+", local_part)
+        return len(self.tokenise(" ".join(words))) / sum(len(w) for w in words)
+
 class EnsembleDetector(BaseDetector):
     """Combines multiple detectors using an OR strategy."""
 
@@ -226,7 +274,8 @@ def main():
     gibberish = GibberishDetector()
     keyword = KeywordDetector()
     heuristic = HeuristicDetector()
-    ensemble = EnsembleDetector([gibberish, keyword, heuristic])
+    tokeniser = TokeniserDetector()
+    ensemble = EnsembleDetector([gibberish, keyword, heuristic, tokeniser])
     
     test_emails = [
         "michael.kao@airwallex.com",
@@ -241,8 +290,9 @@ def main():
         res_g = "S" if gibberish.is_spam(email) else "H"
         res_k = "S" if keyword.is_spam(email) else "H"
         res_h = "S" if heuristic.is_spam(email) else "H"
+        res_t = "S" if tokeniser.is_spam(email) else "H"
         res_e = "S" if ensemble.is_spam(email) else "H"
-        print(f"{email:30} | G:{res_g} K:{res_k} H:{res_h} | Ensemble:{res_e}")
+        print(f"{email:30} | G:{res_g} K:{res_k} H:{res_h} T:{res_t} | Ensemble:{res_e}")
 
 if __name__ == "__main__":
     main()
