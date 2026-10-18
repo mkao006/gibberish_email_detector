@@ -1,10 +1,10 @@
-from email_spam_detector.detectors import GibberishDetector, KeywordDetector, HeuristicDetector, EnsembleDetector
+from email_spam_detector.detectors import GibberishDetector, KeywordDetector, HeuristicDetector, EnsembleDetector, TokeniserDetector, GibberishClassification
 
 def test_gibberish_detector():
     detector = GibberishDetector()
     
     # Legit emails
-    assert detector.is_spam("michael.kao@airwallex.com") == False
+    assert detector.is_spam("jane.doe@example.com") == False
     assert detector.is_spam("john.doe@gmail.com") == False
     assert detector.is_spam("support@github.com") == False
     assert detector.is_spam("bob@example.com") == False # Short
@@ -31,7 +31,7 @@ def test_keyword_detector():
     assert detector.is_spam("urgent.offer@yahoo.com") == True
     
     # No keywords
-    assert detector.is_spam("michael.kao@gmail.com") == False
+    assert detector.is_spam("jane.doe@gmail.com") == False
     assert detector.is_spam("info@company.com") == False
 
 def test_heuristic_detector():
@@ -52,7 +52,7 @@ def test_heuristic_detector():
     assert detector.is_spam("02986u2qrxzw@gmail.com") == True
 
     # Legit
-    assert detector.is_spam("michael.kao@gmail.com") == False
+    assert detector.is_spam("jane.doe@gmail.com") == False
     assert detector.is_spam("support@github.com") == False
 
 def test_ensemble_detector():
@@ -71,4 +71,34 @@ def test_ensemble_detector():
     assert ensemble.is_spam("qazwsxedcrfvtgb@gmail.com") == True
     
     # Legit
-    assert ensemble.is_spam("michael.kao@gmail.com") == False
+    assert ensemble.is_spam("jane.doe@gmail.com") == False
+
+def test_tokeniser_detector():
+    detector = TokeniserDetector()
+
+    # Legit
+    assert detector.is_spam("jane.doe@example.com") == False
+    assert detector.is_spam("john.doe@gmail.com") == False
+    assert detector.is_spam("jose.garcia1987@gmail.com") == False
+
+    # Gibberish
+    assert detector.is_spam("fdasfjaklsd@gmail.com") == True
+    assert detector.is_spam("xkqzvjwplt@yahoo.com") == True
+    assert detector.is_spam("ew9g31h1ataepsz@hotmail.com") == True
+
+def test_tokeniser_detector_classification():
+    detector = TokeniserDetector()
+    assert detector.classify("john.doe@gmail.com") is GibberishClassification.NOT_GIBBERISH
+    assert detector.classify("xkqzvjwplt@yahoo.com") is GibberishClassification.GIBBERISH
+
+    # Non-Latin or letterless local parts can't be scored
+    assert detector.classify("李小龙@qq.com") is GibberishClassification.NON_LATIN
+    assert detector.classify("владимир@mail.ru") is GibberishClassification.NON_LATIN
+    assert detector.classify("123456@qq.com") is GibberishClassification.NON_LATIN
+    assert detector.is_spam("李小龙@qq.com") == False
+
+def test_tokeniser_detector_custom_tokeniser():
+    # One token per letter -> score 1.0, above any sensible threshold
+    detector = TokeniserDetector(tokenise=lambda s: s.replace(" ", ""), threshold=0.5)
+    assert detector.is_spam("john.doe@gmail.com") == True
+    assert detector.score("john.doe") == 1.0

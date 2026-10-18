@@ -39,7 +39,7 @@ def run_evaluation(name, detector, data):
         print(f"  Example False Negative: {fn_examples[0]}")
 
 def evaluate():
-    from email_spam_detector.detectors import KeywordDetector, EnsembleDetector, HeuristicDetector
+    from email_spam_detector.detectors import KeywordDetector, EnsembleDetector, HeuristicDetector, TokeniserDetector
     
     data = []
     with open('data/emails.csv', 'r') as f:
@@ -50,12 +50,16 @@ def evaluate():
     gibberish = GibberishDetector()
     keyword = KeywordDetector()
     heuristic = HeuristicDetector()
+    tokeniser = TokeniserDetector()
     ensemble = EnsembleDetector([gibberish, keyword, heuristic])
+    ensemble_tok = EnsembleDetector([gibberish, keyword, heuristic, tokeniser])
     
     run_evaluation("Gibberish Detector", gibberish, data)
     run_evaluation("Keyword Detector", keyword, data)
     run_evaluation("Heuristic Detector", heuristic, data)
+    run_evaluation("Tokeniser Detector", tokeniser, data)
     run_evaluation("Ensemble (OR)", ensemble, data)
+    run_evaluation("Ensemble (OR) + Tokeniser", ensemble_tok, data)
 
 if __name__ == "__main__":
     evaluate()
